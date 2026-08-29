@@ -21,9 +21,17 @@ import okhttp3.Request
 
 class MainActivity : ComponentActivity() {
 
+    // IMPORTANT: Chaos Proxy is a debug/QA tool. Never add ComposeChaosInterceptor (or attach
+    // ComposeChaosOverlay below) unconditionally — always gate both behind a debug-only check
+    // like BuildConfig.DEBUG so a release build can never ship with chaos rules wired into
+    // live network traffic. See README "Production Safety" section for details.
     private val okHttpClient by lazy {
         OkHttpClient.Builder()
-            .addInterceptor(ComposeChaosInterceptor())
+            .apply {
+                if (BuildConfig.DEBUG) {
+                    addInterceptor(ComposeChaosInterceptor())
+                }
+            }
             .build()
     }
 
@@ -38,8 +46,10 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier.fillMaxSize()) {
                         SampleAppContent(client = okHttpClient)
 
-                        // Attach floating Chaos Proxy Overlay
-                        ComposeChaosOverlay()
+                        // Attach floating Chaos Proxy Overlay — debug-only, see note above.
+                        if (BuildConfig.DEBUG) {
+                            ComposeChaosOverlay()
+                        }
                     }
                 }
             }
