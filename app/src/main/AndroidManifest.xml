@@ -9,9 +9,9 @@
         android:label="Compose Chaos Proxy Demo"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoTitleBar">
+        android:theme="@style/Theme.ComposeChaosProxy">
         <activity
-            android:name=".MainActivity"
+            android:name="io.github.zakayothuku.chaosproxy.sample.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

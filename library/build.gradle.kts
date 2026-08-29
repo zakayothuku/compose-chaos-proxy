@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "io.github.zakayothuku.chaosproxy"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 24
@@ -39,6 +39,10 @@ android {
             withSourcesJar()
         }
     }
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
