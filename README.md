@@ -98,6 +98,48 @@ ComposeChaosInterceptor.setEnabled(false)
 
 ---
 
+## ⚠️ Production Safety
+
+`compose-chaos-proxy` is a **developer/QA tool**. The library itself does **not** know
+whether it has been added to a debug or release build — it publishes a single `release`
+Maven variant, so it cannot reliably self-detect your app's build type. **You are
+responsible for gating both integration points behind a debug-only check in your own app
+code**, for example:
+
+```kotlin
+val okHttpClient = OkHttpClient.Builder()
+    .apply {
+        if (BuildConfig.DEBUG) {
+            addInterceptor(ComposeChaosInterceptor())
+        }
+    }
+    .build()
+
+@Composable
+fun MainScreen() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        YourAppContent()
+
+        if (BuildConfig.DEBUG) {
+            ComposeChaosOverlay()
+        }
+    }
+}
+```
+
+Never add `ComposeChaosInterceptor()` or `ComposeChaosOverlay()` unconditionally — doing so
+risks shipping a build where real network traffic can be delayed/corrupted, and where the
+floating overlay exposes a live network-chaos control surface to end users. See
+`app/src/main/java/io/github/zakayothuku/chaosproxy/sample/MainActivity.kt` for a reference
+implementation. Note `buildFeatures.buildConfig = true` must be enabled in your app module
+for `BuildConfig.DEBUG` to be available.
+
+As an extra safety net, chaos rules are also inert by default: `ChaosConfigRepository`'s
+`globalEnabled` flag defaults to `false`, and `ComposeChaosInterceptor.setEnabled(false)` acts
+as a master kill-switch you can wire into a remote config / feature flag for defense in depth.
+
+---
+
 ## 🧪 Testing
 
 Run library unit tests:
