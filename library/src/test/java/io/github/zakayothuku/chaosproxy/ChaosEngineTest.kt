@@ -95,4 +95,62 @@ class ChaosEngineTest {
 
         assertTrue(result is ChaosExecutionResult.Proceed)
     }
+
+    @Test
+    fun `test failureProbabilityPercent of 0 always bypasses regardless of random roll`() {
+        val rule = ChaosRule(
+            name = "Never Trigger",
+            urlPattern = ".*",
+            injectedStatusCode = 500,
+            failureProbabilityPercent = 0
+        )
+        ChaosConfigRepository.addRule(rule)
+        ChaosConfigRepository.setGlobalEnabled(true)
+
+        val request = Request.Builder().url("https://api.example.com/anything").build()
+
+        // Random.nextInt(1, 101) always yields a roll in [1, 100]; with a 0% probability
+        // that roll must always exceed the threshold, so the rule should never fire across
+        // many different seeds.
+        repeat(20) { seed ->
+            val result = ChaosEngine(random = Random(seed.toLong())).evaluate(request)
+            assertTrue(result is ChaosExecutionResult.Proceed)
+        }
+    }
+
+    @Test
+    fun `test failureProbabilityPercent of 100 always triggers regardless of random roll`() {
+        val rule = ChaosRule(
+            name = "Always Trigger",
+            urlPattern = ".*",
+            injectedStatusCode = 500,
+            failureProbabilityPercent = 100
+        )
+        ChaosConfigRepository.addRule(rule)
+        ChaosConfigRepository.setGlobalEnabled(true)
+
+        val request = Request.Builder().url("https://api.example.com/anything").build()
+
+        repeat(20) { seed ->
+            val result = ChaosEngine(random = Random(seed.toLong())).evaluate(request)
+            assertTrue(result is ChaosExecutionResult.InjectedResponse)
+        }
+    }
+
+    @Test
+    fun `test first matching enabled rule wins when multiple rules match`() {
+        val disabledRule = ChaosRule(name = "Disabled", urlPattern = ".*", enabled = false, injectedStatusCode = 400)
+        val firstEnabledRule = ChaosRule(name = "First", urlPattern = ".*", injectedStatusCode = 401, failureProbabilityPercent = 100)
+        val secondEnabledRule = ChaosRule(name = "Second", urlPattern = ".*", injectedStatusCode = 500, failureProbabilityPercent = 100)
+        ChaosConfigRepository.addRule(disabledRule)
+        ChaosConfigRepository.addRule(firstEnabledRule)
+        ChaosConfigRepository.addRule(secondEnabledRule)
+        ChaosConfigRepository.setGlobalEnabled(true)
+
+        val request = Request.Builder().url("https://api.example.com/anything").build()
+        val result = engine.evaluate(request)
+
+        assertTrue(result is ChaosExecutionResult.InjectedResponse)
+        assertEquals(401, (result as ChaosExecutionResult.InjectedResponse).response.code)
+    }
 }
