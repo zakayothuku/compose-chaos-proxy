@@ -154,6 +154,48 @@ Build sample application:
 ./gradlew :app:assembleDebug
 ```
 
+### End-to-end simulation & recorded outcomes
+
+Beyond isolated unit tests, [`ChaosProxySimulationTest`](library/src/test/java/io/github/zakayothuku/chaosproxy/ChaosProxySimulationTest.kt)
+drives the real public API (`OkHttpClient` + `ComposeChaosInterceptor` + `ChaosConfigRepository`)
+against a live `MockWebServer` for every built-in preset, plus a statistical flaky-network
+scenario, to prove chaos injection actually behaves as configured end-to-end rather than just
+in isolation:
+
+- **Baseline** (chaos disabled) — requests pass through untouched, no events logged.
+- **Auth Expired (401)**, **Server Outage (503)**, **Rate Limited (429)** presets — every
+  request receives the expected synthetic status code + `X-Chaos-Injected` header, with a
+  matching event logged per request.
+- **Offline Mode** preset — every request throws `SocketTimeoutException`.
+- **Statistical flaky-network scenario** — a scaled-down analogue of the Flaky 3G preset (same
+  25% drop probability) run over 200 trials to verify the probability roll behaves as
+  configured, within a wide tolerance band to avoid CI flakiness.
+
+Each scenario independently measures the *real* observed outcome (status code, latency, thrown
+exception) and cross-checks it against what `ChaosConfigRepository` actually logged, rather than
+trusting only the engine's return value.
+
+Run it directly with:
+
+```bash
+./gradlew :library:testDebugUnitTest --tests "*ChaosProxySimulationTest"
+```
+
+Every run writes a recorded, human-readable report to
+`library/build/reports/chaos-simulation/chaos-simulation-report.md`, so results are reviewable
+as a durable artifact rather than just a pass/fail in CI. Example recording from a local run:
+
+```
+| # | Scenario | Requests | Result | Notes |
+|---|----------|----------|--------|-------|
+| 1 | Baseline (chaos disabled) | 5 | ✅ PASS | All 5 requests returned HTTP 200 with no chaos header and no logged events. |
+| 2 | Preset: Offline Mode | 5 | ✅ PASS | All 5 requests dropped with SocketTimeoutException (avg 86ms); 5 matching events logged. |
+| 3 | Preset: Rate Limited (429) | 5 | ✅ PASS | All 5 requests returned HTTP 429 (avg 281ms); 5 matching events logged. |
+| 4 | Preset: Auth Expired (401) | 5 | ✅ PASS | All 5 requests returned HTTP 401 (avg 369ms); 5 matching events logged. |
+| 5 | Preset: Server Outage (503) | 5 | ✅ PASS | All 5 requests returned HTTP 503 (avg 367ms); 5 matching events logged. |
+| 6 | Statistical: Flaky network (~25% drop) | 200 | ✅ PASS | Observed drop rate: 30.0% (60/200 dropped, 140/200 succeeded). |
+```
+
 ---
 
 ## 📄 License & Author
