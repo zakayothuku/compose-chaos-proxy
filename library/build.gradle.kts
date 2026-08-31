@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.compiler)
-    id("maven-publish")
+    alias(libs.plugins.vanniktech.mavenPublish)
 }
 
 android {
@@ -33,12 +33,6 @@ android {
     buildFeatures {
         compose = true
     }
-
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-        }
-    }
 }
 
 kotlin {
@@ -62,43 +56,50 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            create<MavenPublication>("release") {
-                from(components["release"])
+mavenPublishing {
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
 
-                groupId = "io.github.zakayothuku"
-                artifactId = "compose-chaos-proxy"
-                version = "1.0.0"
+    coordinates(
+        groupId = "io.github.zakayothuku",
+        artifactId = "compose-chaos-proxy",
+        version = (project.findProperty("VERSION_NAME") as String?) ?: "1.0.0"
+    )
 
-                pom {
-                    name.set("compose-chaos-proxy")
-                    description.set("On-Device Network & Latency Chaos Simulator with Jetpack Compose Overlay for Android.")
-                    url.set("https://github.com/zakayothuku/compose-chaos-proxy")
+    pom {
+        name.set("compose-chaos-proxy")
+        description.set("On-Device Network & Latency Chaos Simulator with Jetpack Compose Overlay for Android.")
+        url.set("https://github.com/zakayothuku/compose-chaos-proxy")
 
-                    licenses {
-                        license {
-                            name.set("MIT License")
-                            url.set("https://opensource.org/licenses/MIT")
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id.set("zakayothuku")
-                            name.set("Zakayo Thuku")
-                            email.set("zakayothuku@gmail.com")
-                        }
-                    }
-
-                    scm {
-                        connection.set("scm:git:github.com/zakayothuku/compose-chaos-proxy.git")
-                        developerConnection.set("scm:git:ssh://github.com/zakayothuku/compose-chaos-proxy.git")
-                        url.set("https://github.com/zakayothuku/compose-chaos-proxy")
-                    }
-                }
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
             }
         }
+
+        developers {
+            developer {
+                id.set("zakayothuku")
+                name.set("Zakayo Thuku")
+                email.set("zakayothuku@gmail.com")
+            }
+        }
+
+        scm {
+            connection.set("scm:git:github.com/zakayothuku/compose-chaos-proxy.git")
+            developerConnection.set("scm:git:ssh://github.com/zakayothuku/compose-chaos-proxy.git")
+            url.set("https://github.com/zakayothuku/compose-chaos-proxy")
+        }
+    }
+}
+
+plugins.withId("signing") {
+    configure<SigningExtension> {
+        val hasKey = project.hasProperty("signingInMemoryKey") ||
+            project.hasProperty("signing.keyId") ||
+            project.hasProperty("signing.secretKeyRingFile") ||
+            System.getenv("ORG_GRADLE_PROJECT_signingInMemoryKey") != null
+        isRequired = hasKey
     }
 }
