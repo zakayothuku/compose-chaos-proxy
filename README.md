@@ -29,11 +29,11 @@
 
 ## 📦 Installation
 
-Add JitPack to your `settings.gradle.kts`:
+Add Maven Central to your `settings.gradle.kts`:
 
 ```kotlin
 repositories {
-    maven { url = uri("https://jitpack.io") }
+    mavenCentral()
 }
 ```
 
@@ -41,7 +41,11 @@ Add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.zakayothuku:compose-chaos-proxy:v1.0.0")
+    // Debug builds: on-device network chaos simulator & UI overlay
+    debugImplementation("io.github.zakayothuku:compose-chaos-proxy:1.0.0")
+    
+    // Release builds: zero-overhead no-op artifact
+    releaseImplementation("io.github.zakayothuku:compose-chaos-proxy-noop:1.0.0")
 }
 ```
 
