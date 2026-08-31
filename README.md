@@ -1,5 +1,7 @@
 # 🌪️ compose-chaos-proxy
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.zakayothuku/compose-chaos-proxy.svg?label=Maven%20Central&color=blue)](https://central.sonatype.com/artifact/io.github.zakayothuku/compose-chaos-proxy)
+[![Android CI](https://github.com/zakayothuku/compose-chaos-proxy/actions/workflows/ci.yml/badge.svg)](https://github.com/zakayothuku/compose-chaos-proxy/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.20-purple.svg)](https://kotlinlang.org)
 [![Android](https://img.shields.io/badge/Android-MinSDK%2024-green.svg)](https://developer.android.com)
